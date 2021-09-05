@@ -1,5 +1,9 @@
 (ns core
-  (:require [reitit.ring :as ring]
+  (:require [buddy.core.keys :as keys]
+            [buddy.core.hash :as hash]
+            [buddy.core.codecs :refer :all]
+            [buddy.core.dsa :as dsa]
+            [reitit.ring :as ring]
             [reitit.coercion.spec]
             [reitit.swagger :as swagger]
             [reitit.swagger-ui :as swagger-ui]
