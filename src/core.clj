@@ -31,6 +31,15 @@
   (hash/sha256)
   (bytes->hex)))
 
+(defn checksum [sha to coin sig]
+  (if (= (item->sha256 to coin sig) sha) {:sha sha :to to :coin coin :sig sig} nil))
+
+(defn verify [{:keys [sha to coin sig]} item]
+  (let [datastring (str to coin)]
+      (cond
+        (dsa/verify datastring sig {:key public-key :alg :rsassa-pss+sha256}) (swap! blockchain assoc sha item)
+        (dsa/verify datastring (:sig (get @blockchain coin)) {:key public-key :alg :rsassa-pss+sha256}) (swap! blockchain assoc sha item))))
+
 (def app
   (ring/ring-handler
     (ring/router
@@ -45,7 +54,7 @@
                 :parameters {:body {:sha string? :to string? :coin string? :sig string?}}
                 :response {201 nil}
                 :handler (fn [{{{:keys [sha to coin sig]} :body} :parameters}]
-                           {:status 201})}}]
+                           (future (verify (checksum sha to coin sig))))}}]
        ["/gift"
         {:post {:summary "Authenticate and recieve vote"
                 :parameters {:body {:to string? :image string?}}
