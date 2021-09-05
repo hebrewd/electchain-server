@@ -20,9 +20,16 @@
             [ring.adapter.jetty :as jetty]
             [muuntaja.core :as m]))
 
-(def candidates (slurp "candidates.txt"))
+(def candidates (hash-set))
+(def private-key (keys/private-key "/tmp/privatekey.pem"))
+(def public-key (keys/public-key "/tmp/publickey.pem"))
 
 (def blockchain (atom {}))
+
+(defn item->sha256 [to coin sig]
+  (-> (str to coin sig)
+  (hash/sha256)
+  (bytes->hex)))
 
 (def app
   (ring/ring-handler
@@ -45,7 +52,10 @@
                 :reponse {200 {:body {:coin string?}}}
                 :handler (fn [{{{:keys [to image]} :body} :parameters}]
                            {:status 200
-                            :body {:coin 1}})}}]
+                            :body (let [sig (dsa/sign (str to nil) {:key private-key :alg :rsassa-pss+sha256})
+                                        sha (item->sha256 to nil sig)]
+                                    {:to to :sig sig :sha sha :coin nil})} ) }}]
+
        ["/result"
         {:get {:summary "Get the voting results"
                :response {200 {:body [{:to string? :count int?}]}}
