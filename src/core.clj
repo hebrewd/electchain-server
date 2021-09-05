@@ -16,6 +16,10 @@
             [ring.adapter.jetty :as jetty]
             [muuntaja.core :as m]))
 
+(def candidates (slurp "candidates.txt"))
+
+(def blockchain (atom {}))
+
 (def app
   (ring/ring-handler
     (ring/router
@@ -41,7 +45,7 @@
        ["/result"
         {:get {:summary "Get the voting results"
                :response {200 {:body [{:to string? :count int?}]}}
-               :handler (fn [_] {:status 200 :body []})}}]
+               :handler (fn [_] (let [ret {}] (reduce #(assoc %1 (:to %2) (inc (%1 (:to %2) 0))) {} @blockchain)))}}]
 
 
        ["/math"
